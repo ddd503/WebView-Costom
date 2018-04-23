@@ -43,7 +43,7 @@ class CostomView: UIView {
     private func setupWebView() {
         self.webView = WKWebView(frame: .zero, configuration: setupConfiguration())
         self.webView?.navigationDelegate = self
-        //        self.webView?.uiDelegate = self
+        self.webView?.uiDelegate = self
         self.webView?.allowsBackForwardNavigationGestures = true
         self.addSubview(webView ?? WKWebView())
         self.setupConstain(webView: self.webView)
@@ -121,4 +121,33 @@ extension CostomView: WKNavigationDelegate {
         // 読み込みを許可
         decisionHandler(.allow)
     }
+}
+
+// MARK: - WKUIDelegate Methods
+
+extension CostomView: WKUIDelegate {
+    /// _blank挙動対応
+    func webView(_ webView: WKWebView,
+                 createWebViewWith configuration: WKWebViewConfiguration,
+                 for navigationAction: WKNavigationAction,
+                 windowFeatures: WKWindowFeatures) -> WKWebView? {
+        
+        guard let url = navigationAction.request.url else {
+            return nil
+        }
+        
+        guard let targetFrame = navigationAction.targetFrame, targetFrame.isMainFrame else {
+            webView.load(URLRequest(url: url))
+            return nil
+        }
+        return nil
+    }
+    
+    /// プレビュー表示の許可
+    func webView(_ webView: WKWebView,
+                 shouldPreviewElement elementInfo: WKPreviewElementInfo) -> Bool {
+        
+        return true
+    }
+    
 }
