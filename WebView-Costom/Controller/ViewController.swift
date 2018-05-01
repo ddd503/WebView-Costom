@@ -73,6 +73,7 @@ extension ViewController: CostomViewDelegate {
         case .start:
             self.indicetor.startAnimating()
         case .error(let error):
+            self.indicetor.stopAnimating()
             print("エラー：\(error.localizedDescription)")
         }
     }

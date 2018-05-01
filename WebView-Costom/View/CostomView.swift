@@ -132,12 +132,15 @@ extension CostomView: WKUIDelegate {
                  for navigationAction: WKNavigationAction,
                  windowFeatures: WKWindowFeatures) -> WKWebView? {
         
-        guard let url = navigationAction.request.url else {
-            return nil
-        }
+        // URL型は必要ない？
+//        guard let url = navigationAction.request.url else {
+//            return nil
+//        }
         
-        guard let targetFrame = navigationAction.targetFrame, targetFrame.isMainFrame else {
-            webView.load(URLRequest(url: url))
+        guard
+            let targetFrame = navigationAction.targetFrame,
+            targetFrame.isMainFrame else {
+            webView.load(navigationAction.request)
             return nil
         }
         return nil
