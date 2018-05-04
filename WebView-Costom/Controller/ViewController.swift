@@ -25,6 +25,11 @@ class ViewController: UIViewController {
     // MARK: - Setup Methods
     
     private func setup() {
+//        if #available(iOS 11.0, *) {
+//            self.baseView.webView?.scrollView.contentInsetAdjustmentBehavior = .never
+//        } else {
+//            self.automaticallyAdjustsScrollViewInsets = false
+//        }
         self.baseView.delegate = self
         load(urlString: "https://qiita.com/d-kawahara")
     }

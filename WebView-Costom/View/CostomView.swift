@@ -24,6 +24,7 @@ class CostomView: UIView {
     var webView: WKWebView?
     var headerView: UIView?
     weak var delegate: CostomViewDelegate?
+    private var scrollingToTop = false
     private let headerViewHight: CGFloat = 50
     
     // MARK: - Init Methods
@@ -37,13 +38,14 @@ class CostomView: UIView {
         super.init(coder: aDecoder)
         self.setupWebView()
     }
-
+    
     // MARK: - Setup Methods
-
+    
     private func setupWebView() {
         self.webView = WKWebView(frame: .zero, configuration: setupConfiguration())
         self.webView?.navigationDelegate = self
         self.webView?.uiDelegate = self
+        self.webView?.scrollView.delegate = self
         self.webView?.allowsBackForwardNavigationGestures = true
         self.addSubview(webView ?? WKWebView())
         self.setupConstain(webView: self.webView)
@@ -110,10 +112,12 @@ extension CostomView: WKNavigationDelegate {
     
     func webView(_ webView: WKWebView, didFailProvisionalNavigation navigation: WKNavigation!, withError error: Error) {
         print("読み込み中エラー")
+        self.delegate?.webViewAction(status: .error(error: error))
     }
     
     func webView(_ webView: WKWebView, didFail navigation: WKNavigation!, withError error: Error) {
         print("通信中のエラー")
+        self.delegate?.webViewAction(status: .error(error: error))
     }
     
     func webView(_ webView: WKWebView, decidePolicyFor navigationAction: WKNavigationAction, decisionHandler: @escaping (WKNavigationActionPolicy) -> Void) {
@@ -133,24 +137,48 @@ extension CostomView: WKUIDelegate {
                  windowFeatures: WKWindowFeatures) -> WKWebView? {
         
         // URL型は必要ない？
-//        guard let url = navigationAction.request.url else {
-//            return nil
-//        }
+        //        guard let url = navigationAction.request.url else {
+        //            return nil
+        //        }
         
         guard
             let targetFrame = navigationAction.targetFrame,
             targetFrame.isMainFrame else {
-            webView.load(navigationAction.request)
-            return nil
+                webView.load(navigationAction.request)
+                return nil
         }
         return nil
     }
     
     /// プレビュー表示の許可
+    @available(iOS 10.0, *)
     func webView(_ webView: WKWebView,
                  shouldPreviewElement elementInfo: WKPreviewElementInfo) -> Bool {
         
         return true
     }
     
+}
+
+// MARK: - UIScrollViewDelegate
+
+extension CostomView: UIScrollViewDelegate {
+    
+    func scrollViewShouldScrollToTop(_ scrollView: UIScrollView) -> Bool {
+        scrollingToTop = true
+        return true
+    }
+    
+    func scrollViewDidScrollToTop(_ scrollView: UIScrollView) {
+        scrollingToTop = false
+    }
+    
+    func scrollViewDidScroll(_ scrollView: UIScrollView) {
+        // scrollView内部のドラッグ、ステータスバータップによる一番上へのスクロールのどちらでもない場合
+        if !scrollView.isDragging && !scrollingToTop {
+            self.webView?.scrollView.setContentOffset(CGPoint(x: 0,
+                                                              y: -headerViewHight),
+                                                      animated: false)
+        }
+    }
 }
