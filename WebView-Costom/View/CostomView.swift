@@ -23,9 +23,11 @@ class CostomView: UIView {
     
     var webView: WKWebView?
     var headerView: UIView?
+    var refreshControl: UIRefreshControl?
     weak var delegate: CostomViewDelegate?
     private var scrollingToTop = false
     private let headerViewHight: CGFloat = 50
+    var isRefreshing = false
     
     // MARK: - Init Methods
     
@@ -51,6 +53,7 @@ class CostomView: UIView {
         self.setupConstain(webView: self.webView)
         // ヘッダービューをスクロール内に追加（遷移時のスクロール位置に関しては考慮していない）
         setHeaderView()
+        setPulltoRefresh()
     }
     
     /// configに設定を加える場合はここで行う
@@ -71,7 +74,7 @@ class CostomView: UIView {
                                                            views: ["v0": webView ?? WKWebView()]))
     }
     
-    func setHeaderView() {
+    private func setHeaderView() {
         self.headerView?.removeFromSuperview()
         // 画面外に作成
         self.headerView = UIView(frame: CGRect(x: 0, y: -headerViewHight, width: self.frame.width, height: headerViewHight))
@@ -81,6 +84,13 @@ class CostomView: UIView {
         self.webView?.scrollView.addSubview(self.headerView ?? UIView())
         // スクロール開始位置を変更
         self.webView?.scrollView.setContentOffset(CGPoint(x: 0, y: -headerViewHight), animated: false)
+    }
+    
+    private func setPulltoRefresh() {
+        self.refreshControl = UIRefreshControl()
+        self.refreshControl?.attributedTitle = NSAttributedString(string: "引っ張って更新")
+        self.refreshControl?.addTarget(self, action: #selector(pullToRefreshAction), for: .valueChanged)
+        self.webView?.scrollView.addSubview(self.refreshControl ?? UIRefreshControl())
     }
     
     // MARK: - Private Methods
@@ -93,6 +103,10 @@ class CostomView: UIView {
         return self.webView?.canGoForward ?? false
     }
     
+    @objc func pullToRefreshAction() {
+        self.isRefreshing = true
+        self.webView?.reload()
+    }
     
 }
 
@@ -175,7 +189,7 @@ extension CostomView: UIScrollViewDelegate {
     
     func scrollViewDidScroll(_ scrollView: UIScrollView) {
         // scrollView内部のドラッグ、ステータスバータップによる一番上へのスクロールのどちらでもない場合
-        if !scrollView.isDragging && !scrollingToTop {
+        if !scrollView.isDragging && !scrollingToTop && !isRefreshing {
             self.webView?.scrollView.setContentOffset(CGPoint(x: 0,
                                                               y: -headerViewHight),
                                                       animated: false)

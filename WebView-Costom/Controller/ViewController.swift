@@ -25,12 +25,15 @@ class ViewController: UIViewController {
     // MARK: - Setup Methods
     
     private func setup() {
-//        if #available(iOS 11.0, *) {
-//            self.baseView.webView?.scrollView.contentInsetAdjustmentBehavior = .never
-//        } else {
-//            self.automaticallyAdjustsScrollViewInsets = false
-//        }
+        // inset周りを設定
+        if #available(iOS 11.0, *) {
+            self.baseView.webView?.scrollView.contentInsetAdjustmentBehavior = .never
+        } else {
+            self.automaticallyAdjustsScrollViewInsets = false
+        }
+        
         self.baseView.delegate = self
+        // ページをロード
         load(urlString: "https://qiita.com/d-kawahara")
     }
     
@@ -48,6 +51,12 @@ class ViewController: UIViewController {
     private func toolbarStatus() {
         self.backButton.isEnabled = self.baseView.isBack()
         self.forwordButton.isEnabled = self.baseView.isForword()
+    }
+    
+    private func indicetorStop() {
+        self.indicetor.stopAnimating()
+        self.baseView.refreshControl?.endRefreshing()
+        self.baseView.isRefreshing = false
     }
     
     // MARK: - Action Methods
@@ -74,11 +83,11 @@ extension ViewController: CostomViewDelegate {
         switch status {
         case .finish:
             self.toolbarStatus()
-            self.indicetor.stopAnimating()
+            self.indicetorStop()
         case .start:
             self.indicetor.startAnimating()
         case .error(let error):
-            self.indicetor.stopAnimating()
+            self.indicetorStop()
             print("エラー：\(error.localizedDescription)")
         }
     }
