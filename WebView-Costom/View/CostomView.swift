@@ -28,6 +28,9 @@ class CostomView: UIView {
     private var scrollingToTop = false
     private let headerViewHight: CGFloat = 50
     var isRefreshing = false
+    private var updatingContentOffsetY = false
+    private var isOverTheContentSizeHeight = false
+    private var isUnderTheStartingPosition = false
     
     // MARK: - Init Methods
     
@@ -41,18 +44,23 @@ class CostomView: UIView {
         self.setupWebView()
     }
     
+    override func traitCollectionDidChange(_ previousTraitCollection: UITraitCollection?) {
+        super.traitCollectionDidChange(previousTraitCollection)
+        
+        // headerViewをscrollView内に追加
+        setHeaderView()
+        webView?.scrollView.delegate = self
+    }
+    
     // MARK: - Setup Methods
     
     private func setupWebView() {
         self.webView = WKWebView(frame: .zero, configuration: setupConfiguration())
         self.webView?.navigationDelegate = self
         self.webView?.uiDelegate = self
-        self.webView?.scrollView.delegate = self
         self.webView?.allowsBackForwardNavigationGestures = true
         self.addSubview(webView ?? WKWebView())
         self.setupConstain(webView: self.webView)
-        // ヘッダービューをスクロール内に追加（遷移時のスクロール位置に関しては考慮していない）
-        setHeaderView()
         setPulltoRefresh()
     }
     
@@ -188,11 +196,51 @@ extension CostomView: UIScrollViewDelegate {
     }
     
     func scrollViewDidScroll(_ scrollView: UIScrollView) {
-        // scrollView内部のドラッグ、ステータスバータップによる一番上へのスクロールのどちらでもない場合
-        if !scrollView.isDragging && !scrollingToTop && !isRefreshing {
-            self.webView?.scrollView.setContentOffset(CGPoint(x: 0,
-                                                              y: -headerViewHight),
-                                                      animated: false)
+        
+        if scrollView.frame.height + scrollView.contentOffset.y > scrollView.contentSize.height {
+            // bouncing
+            isOverTheContentSizeHeight = true
         }
+        
+        if scrollView.contentOffset.y < -headerViewHight {
+            // bouncing
+            isUnderTheStartingPosition = true
+        }
+        
+        // 以下の全てを満たす場合、webView.scrollViewのContentOffsetYを更新する
+        // - scrollView内部のドラッグをしていない
+        // - ステータスバータップによる一番上へのスクロールをしていない
+        // - webView.scrollViewのContentOffsetY更新中でない
+        // - scrollviewの一番下より下にいない (not bouncing)
+        // - scrollviewの一番上より上にいない (not bouncing)
+        let isUpdateableContentOffsetY = !scrollView.isDragging
+            && !scrollingToTop
+            && !updatingContentOffsetY
+            && !isOverTheContentSizeHeight
+            && !isUnderTheStartingPosition
+        
+        if isUpdateableContentOffsetY {
+            
+            updatingContentOffsetY = true
+            
+            // iOS9以下ではScrollViewによる強制的なoffsetの変更はなし
+            if #available(iOS 10.0, *) {
+                var newContentOffsetY: CGFloat
+                if scrollView.contentOffset.y < 0 {
+                    newContentOffsetY = -headerViewHight
+                } else {
+                    newContentOffsetY = scrollView.contentOffset.y - headerViewHight
+                }
+                print("newContentOffsetY: \(newContentOffsetY)")
+                webView?.scrollView.setContentOffset(CGPoint(x: 0, y: newContentOffsetY), animated: false)
+            }
+            
+            updatingContentOffsetY = false
+        }
+    }
+    
+    func scrollViewDidEndDecelerating(_ scrollView: UIScrollView) {
+        isOverTheContentSizeHeight = false
+        isUnderTheStartingPosition = false
     }
 }
