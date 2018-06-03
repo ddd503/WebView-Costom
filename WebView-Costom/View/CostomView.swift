@@ -44,6 +44,13 @@ class CostomView: UIView {
         self.setupWebView()
     }
     
+    // デリゲートを解放
+    deinit {
+        self.webView?.uiDelegate = nil
+        self.webView?.navigationDelegate = nil
+        self.webView?.scrollView.delegate = nil
+    }
+    
     override func traitCollectionDidChange(_ previousTraitCollection: UITraitCollection?) {
         super.traitCollectionDidChange(previousTraitCollection)
         

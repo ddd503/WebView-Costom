@@ -22,6 +22,11 @@ class ViewController: UIViewController {
         setup()
     }
 
+    // デリゲートを解放
+    deinit {
+        self.baseView?.delegate = nil
+    }
+    
     // MARK: - Setup Methods
     
     private func setup() {
